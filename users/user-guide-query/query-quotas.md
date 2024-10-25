@@ -115,9 +115,7 @@ curl -X POST 'http://localhost:9000/applicationQuotas/{applicationName}?maxQueri
 ```
 
 {% hint style="info" %}
-```
 To disable application quota, use POST request with empty parameter value.
-```
 {% endhint %}
 
 Mappings can be displayed in  controller's Zookeeper browser at  `/PROPERTYSTORE/CONFIGS/CLUSTER/applicationQuotas`path .
