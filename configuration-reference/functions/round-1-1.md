@@ -8,15 +8,13 @@ Assigns a row number to all the rows in a specified table.
 
 ## Signature
 
-> bigint()
+> ROW\_NUMBER()
 
 ## ROW\_NUMBER examples
 
-
-
-* [Order transactions by payment date](#order-transactions-by-payment-date)
-* [Identify the top two transactions by customer, ordered by transaction amount](#identify-the-top-two-transactions-by-customer-ordered-by-transaction-amount)
-* [Identify customers with the highest number of transactions](#identify-customers-with-the-highest-number-of-transactions)
+* [Order transactions by payment date](round-1-1.md#order-transactions-by-payment-date)
+* [Identify the top two transactions by customer, ordered by transaction amount](round-1-1.md#identify-the-top-two-transactions-by-customer-ordered-by-transaction-amount)
+* [Identify customers with the highest number of transactions](round-1-1.md#identify-customers-with-the-highest-number-of-transactions)
 
 ### Order transactions by payment date
 
@@ -51,8 +49,6 @@ SELECT customer_id, count(*), ROW_NUMBER() OVER(ORDER BY count(*) DESC, customer
 ```
 {% endcode %}
 
-
-
 | customer\_id | count | row\_number |
 | ------------ | ----- | ----------- |
 | 148          | 45    | 1           |
@@ -63,6 +59,4 @@ SELECT customer_id, count(*), ROW_NUMBER() OVER(ORDER BY count(*) DESC, customer
 | 368          | 34    | 6           |
 
 \
-\
-
-
+\\

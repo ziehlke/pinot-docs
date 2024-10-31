@@ -1,60 +1,85 @@
 ---
 description: >-
-  Use window aggregate to compute averages, sort, rank, or count items,
-  calculate sums, and find minimum or maximum values across window.
+  Use window functions to compute averages, sort, rank, or count items,
+  calculate sums, and find minimum or maximum values across windows.
 ---
 
-# Window aggregate
+# Window Functions
+
+
 
 {% hint style="info" %}
 **Important:** To query using Windows functions, you must enable Pinot's [multi-stage query engine (v2)](https://docs.pinot.apache.org/reference/cluster-1). See how to [enable and use the multi-stage query engine (v2](https://docs.pinot.apache.org/developers/advanced/v2-multi-stage-query-engine)).
 {% endhint %}
 
-## Window aggregate overview
+## Window Functions overview
 
-This is an overview of the window aggregate feature.
+This is an overview of the window functions feature.
 
-### Window aggregate syntax
+### Window function syntax
 
-Pinot's window function (`windowedAggCall`) includes the following syntax definition:
+Pinot's window function (`windowedCall`) has the following syntax definition:
 
 {% code overflow="wrap" %}
 ```sql
-windowedAggCall:
-      windowAggFunction
+windowedCall:
+      windowFunction
       OVER 
       window
 
-windowAggFunction:
-      agg '(' [ ALL | DISTINCT ] value [, value ]* ')'
+windowFunction:
+      function_name '(' value [, value ]* ')'
    |
-      agg '(' '*' ')'
+      function_name '(' '*' ')'
 
 window:
       '('
       [ PARTITION BY expression [, expression ]* ]
       [ ORDER BY orderItem [, orderItem ]* ]
       [
-          RANGE numericOrIntervalExpression { PRECEDING | FOLLOWING }
-      |   ROWS numericExpression { PRECEDING | FOLLOWING }
+          RANGE BETWEEN frame_start AND frame_end
+        |   
+          ROWS BETWEEN frame_start AND frame_end
+        |
+          RANGE frame_start
+        |
+          ROWS frame_start    
       ]
       ')'
+      
+frame_start:
+      UNBOUNDED PRECEDING
+    |
+      offset PRECEDING
+    |
+      CURRENT ROW
+    |  
+      offset FOLLOWING
+     
+frame_end:
+      offset PRECEDING
+    |
+      CURRENT ROW
+    |
+      offset FOLLOWING
+    |
+      UNBOUNDED FOLLOWING       
 ```
 {% endcode %}
 
-* `windowAggCall` refers to the actual windowed agg operation.
-* `windowAggFunction` refers to the aggregation function used inside a windowed aggregate, see supported [window aggregate functions](windows-functions.md).
+* `windowedCall` refers to the actual windowed operation.
+* `windowFunction` refers to the window function used, see supported [window functions](windows-functions.md).
 * `window` is the window definition / windowing mechanism, see supported [window mechanism](windows-functions.md#window-mechanism-over-clause).
 
-You can jump to the [examples](windows-functions.md#examples-of-windows-functions) section to see more concrete use cases of window aggregate on Pinot.
+You can jump to the [examples](windows-functions.md#examples-of-windows-functions) section to see more concrete use cases of window functions in Pinot.
 
-### Example window aggregate query layout
+### Example window function query layout
 
-The following query shows the complete components of the window function. Note, `PARTITION BY` and `ORDER BY` are optional.
+The following query shows the complete components of the window function. Note that the `PARTITION BY` ,`ORDER BY`, and the `FRAME` clauses are all optional.
 
 {% code overflow="wrap" %}
 ```sql
-SELECT FUNC(column1) OVER (PARTITION BY column2 ORDER BY column3)
+SELECT FUNC(column1) OVER (PARTITION BY column2 ORDER BY column3 RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
     FROM tableName
     WHERE filter_clause  
 ```
@@ -64,38 +89,45 @@ SELECT FUNC(column1) OVER (PARTITION BY column2 ORDER BY column3)
 
 #### Partition by clause
 
-* If a PARTITION BY clause is specified, the intermediate results will be grouped into different partitions based on the values of the columns appearing in the PARTITION BY clause.
-* If the PARTITION BY clause isn’t specified, the whole result will be regarded as one big partition, i.e. there is only one partition in the result set.
+* If a `PARTITION BY` clause is specified, the intermediate results will be grouped into different partitions based on the values of the columns appearing in the `PARTITION BY` clause.
+* If the `PARTITION BY` clause isn’t specified, the whole result will be regarded as one big partition, i.e. there is only one partition in the result set.
 
 #### Order by clause
 
-* If an ORDER BY clause is specified, all the rows within the same partition will be sorted based on the values of the columns appearing in the window `ORDER BY` clause. The ORDER BY clause decides the order in which the rows within a partition are to be processed.
-* If no ORDER BY clause is specified while a PARTITION BY clause is specified, the order of the rows is undefined. To order the output, use a global `ORDER BY` clause in the query.
+* If an `ORDER BY` clause is specified, all the rows within the same partition will be sorted based on the values of the columns appearing in the window `ORDER BY` clause. The `ORDER BY` clause decides the order in which the rows within a partition are to be processed.&#x20;
+* If no `ORDER BY` clause is specified while a `PARTITION BY` clause is specified, the order of the rows is undefined. To order the output, use a global `ORDER BY` clause in the query.
 
 #### Frame clause
 
 {% hint style="warning" %}
-**Important Note**: in release 1.0.0 window aggregate only supports `UNBOUND PRECEDING`, `UNBOUND FOLLOWING` and `CURRENT ROW`. frame and row count support have not been implemented yet.
+`RANGE` type window frames currently cannot be used with `offset PRECEDING` / `offset FOLLOWING`
 {% endhint %}
 
-* {RANGE|ROWS} frame\_start OR
-* {RANGE|ROWS} BETWEEN frame\_start AND frame\_end; frame\_start and frame\_end can be any of:
-  * UNBOUNDED PRECEDING: expression PRECEDING. May only be allowed in ROWS mode \[depends on DB, some support some don’t]
-  * CURRENT ROW expression FOLLOWING. May only be allowed in ROWS mode \[depends on DB, some support some don’t]
-  * UNBOUNDED FOLLOWING:
-    * If no FRAME clause is specified, then the default frame behavior depends on whether ORDER BY is present or not.
-    * If an ORDER BY clause is specified, the default behavior is to calculate the aggregation from the beginning of the partition to the current row or UNBOUNDED PRECEDING to CURRENT ROW.
-    * If only a PARTITION BY clause is present, the default frame behavior is to calculate the aggregation from UNBOUNDED PRECEDING to CURRENT ROW.
+The following window frame clauses are currently supported:
 
-If there is no FRAME, no PARTITION BY, and no ORDER BY clause specified in the OVER clause (empty OVER), the whole result set is regarded as one partition, and there's one frame in the window.
+* `RANGE frame_start` where `frame_start` can be `UNBOUNDED PRECEDING` or `CURRENT ROW` (`frame_end` will default to `CURRENT ROW`)
+* `ROWS frame_start` where `frame_start` can be `UNBOUNDED PRECEDING`, `offset PRECEDING`,  or `CURRENT ROW` (`frame_end` will default to `CURRENT ROW`)
+* `RANGE BETWEEN frame_start AND frame_end`; `frame_start` can be either `UNBOUNDED PRECEDING` or `CURRENT ROW` and `frame_end` can be either `CURRENT ROW` or `UNBOUNDED FOLLOWING`
+* `ROWS BETWEEN frame_start AND frame_end`; `frame_start` / `frame_end` can be one of:
+  * `UNBOUNDED PRECEDING` (`frame_start` only)
+  * `offset PRECEDING` where `offset` is an integer literal
+  * `CURRENT ROW`
+  * `offset FOLLOWING` where `offset` is an integer literal
+  * `UNBOUNDED FOLLOWING` (`frame_end` only)
 
-The OVER clause applies a specified supported [windows aggregate function](windows-functions.md#window-aggregate-functions) to compute values over a group of rows and return a single result for each row. The OVER clause specifies how the rows are arranged and how the aggregation is done on those rows.
+In `RANGE` mode, a `frame_start` of `CURRENT ROW` means the frame starts with the current row's first _peer_ row (a row that the window's `ORDER BY` clause sorts as equivalent to the current row), while a `frame_end` of `CURRENT ROW` means the frame ends with the current row's last peer row. In `ROWS` mode, `CURRENT ROW` simply means the current row.
 
-Inside the over clause, there are three optional components: PARTITION BY clause, ORDER BY clause, and FRAME clause.
+If no `ORDER BY` clause is specified, the window frame will always be `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING` and cannot be modified. When an `ORDER BY` clause is present, the default frame is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` if no explicit window frame is defined in the query.&#x20;
 
-## Window aggregate functions
+If there is no `FRAME`, no `PARTITION BY`, and no `ORDER BY` clause specified in the OVER clause (empty `OVER`), the whole result set is regarded as one partition, and there's one frame in the window.
 
-Window aggregate functions are commonly used to do the following:
+The `OVER` clause applies a specified supported [windows function](windows-functions.md#window-aggregate-functions) to compute values over a group of rows and return a single result for each row. The `OVER` clause specifies how the rows are arranged and how the aggregation is done on those rows.
+
+Inside the over clause, there are three optional components: `PARTITION BY` clause, `ORDER BY` clause, and `FRAME` clause.
+
+## Window functions
+
+Window functions are commonly used to do the following:
 
 * [Compute averages](windows-functions.md#find-the-average-transaction-amount-by-customer-id)
 * [Rank items](windows-functions.md#rank-year-to-date-sales-for-a-sales-team)
@@ -103,9 +135,11 @@ Window aggregate functions are commonly used to do the following:
 * [Calculate sums](windows-functions.md#sum-transactions-by-customer-id)
 * [Find minimum or maximum values](windows-functions.md#find-the-minimum-or-maximum-transaction-by-customer-id)
 
-Supported window aggregate functions are listed in the following table.
+Supported window functions are listed in the following table.
 
-<table><thead><tr><th>Function</th><th>Description</th><th width="198">Example</th><th>Default Value When No Record Selected</th></tr></thead><tbody><tr><td><a href="https://github.com/pinot-contrib/pinot-docs/blob/master/configuration-reference/functions/avg.md"><strong>AVG</strong></a></td><td>Returns the average of the values for a numeric column as a<code>Double over the specified number of rows or partition (if applicable).</code></td><td><code>AVG(playerScore)</code></td><td><code>Double.NEGATIVE_INFINITY</code></td></tr><tr><td>BOOL_AND</td><td>Returns true if all input values are true, otherwise false</td><td></td><td></td></tr><tr><td>BOOL_OR</td><td>Returns true if at least one input value is true, otherwise false</td><td></td><td></td></tr><tr><td><a href="../../../configuration-reference/functions/count.md"><strong>COUNT</strong></a></td><td>Returns the count of the records as <code>Long</code></td><td><code>COUNT(*)</code></td><td><code>0</code></td></tr><tr><td><a href="../../../configuration-reference/functions/min.md"><strong>MIN</strong></a></td><td>Returns the minimum value of a numeric column as <code>Double</code></td><td><code>MIN(playerScore)</code></td><td><code>Double.POSITIVE_INFINITY</code></td></tr><tr><td><a href="../../../configuration-reference/functions/max.md"><strong>MAX</strong></a></td><td>Returns the maximum value of a numeric column as <code>Double</code></td><td><code>MAX(playerScore)</code></td><td><code>Double.NEGATIVE_INFINITY</code></td></tr><tr><td><a href="../../../configuration-reference/functions/round-1-1.md"><strong>ROW_NUMBER</strong></a></td><td>Assigns a unique row number to all the rows in a specified table.</td><td><code>ROW_NUMBER()</code></td><td><code>0</code></td></tr><tr><td><a href="../../../configuration-reference/functions/sum.md"><strong>SUM</strong></a></td><td>Returns the sum of the values for a numeric column as <code>Double</code></td><td><code>SUM(playerScore)</code></td><td><code>0</code></td></tr><tr><td><a href="../../../configuration-reference/functions/lead.md">LEAD</a></td><td>The <code>LEAD</code> function provides access to a subsequent row within the same result set, without the need for a self-join.</td><td><code>LEAD(column_name, offset, default_value)</code></td><td></td></tr><tr><td><a href="../../../configuration-reference/functions/lag.md">LAG</a></td><td>The <code>LAG</code> function provides access to a previous row within the same result set, without the need for a self-join.</td><td><code>LAG(column_name, offset, default_value)</code></td><td></td></tr><tr><td>FIRST_VALUE</td><td>The <code>FIRST_VALUE</code> function returns the first value in an ordered set of values within the window frame.</td><td><code>FIRST_VALUE(salary)</code></td><td></td></tr><tr><td>LAST_VALUE</td><td>The <code>LAST_VALUE</code> function returns the last value in an ordered set of values within the window frame.</td><td><code>LAST_VALUE(salary)</code></td><td></td></tr></tbody></table>
+<table><thead><tr><th>Function</th><th>Description</th><th width="198">Example</th><th>Default Value When No Record Selected</th></tr></thead><tbody><tr><td><a href="https://github.com/pinot-contrib/pinot-docs/blob/master/configuration-reference/functions/avg.md"><strong>AVG</strong></a></td><td>Returns the average of the values for a numeric column in the defined window.</td><td><code>AVG(playerScore)</code></td><td><code>Double.NEGATIVE_INFINITY</code></td></tr><tr><td>BOOL_AND</td><td>Returns <code>false</code> if even a single value in the window is <code>false</code>, <code>null</code> if a single value in the window is <code>null</code>, and <code>true</code> if all the values in the window are <code>true</code>.</td><td></td><td><code>null</code></td></tr><tr><td>BOOL_OR</td><td>Returns <code>true</code> if even a single value in the window is <code>true</code> , <code>null</code> if a single value in the window is <code>null</code>, and <code>false</code> if all the values in the window are <code>false</code>.</td><td></td><td><code>null</code></td></tr><tr><td><a href="../../../configuration-reference/functions/count.md"><strong>COUNT</strong></a></td><td>Returns the number of values in the window</td><td><code>COUNT(*)</code></td><td><code>0</code></td></tr><tr><td><a href="../../../configuration-reference/functions/min.md"><strong>MIN</strong></a></td><td>Returns the minimum value of a numeric column as <code>Double</code></td><td><code>MIN(playerScore)</code></td><td><code>null</code></td></tr><tr><td><a href="../../../configuration-reference/functions/max.md"><strong>MAX</strong></a></td><td>Returns the maximum value of a numeric column as <code>Double</code></td><td><code>MAX(playerScore)</code></td><td><code>null</code></td></tr><tr><td><a href="../../../configuration-reference/functions/sum.md"><strong>SUM</strong></a></td><td>Returns the sum of the values for a numeric column as <code>Double</code></td><td><code>SUM(playerScore)</code></td><td><code>null</code></td></tr><tr><td><a href="../../../configuration-reference/functions/lead.md">LEAD</a></td><td>The <code>LEAD</code> function provides access to a subsequent row within the same result set, without the need for a self-join.</td><td><code>LEAD(column_name, offset, default_value)</code></td><td></td></tr><tr><td><a href="../../../configuration-reference/functions/lag.md">LAG</a></td><td>The <code>LAG</code> function provides access to a previous row within the same result set, without the need for a self-join.</td><td><code>LAG(column_name, offset, default_value)</code></td><td></td></tr><tr><td><a href="../../../configuration-reference/functions/first_value.md">FIRST_VALUE</a></td><td>The <code>FIRST_VALUE</code> function returns the value from the first row in the window.</td><td><code>FIRST_VALUE(salary)</code></td><td></td></tr><tr><td><a href="../../../configuration-reference/functions/last_value.md">LAST_VALUE</a></td><td>The <code>LAST_VALUE</code> function returns the value from the last row in the window</td><td><code>LAST_VALUE(salary)</code></td><td></td></tr><tr><td><a href="../../../configuration-reference/functions/round-1-1.md">ROW_NUMBER</a></td><td>Returns the number of the current row within its partition, counting from 1.</td><td><code>ROW_NUMBER()</code></td><td></td></tr><tr><td>RANK</td><td>Returns the rank of the current row, with gaps - i.e., the <code>row_number</code> of the first row in its peer group.</td><td><code>RANK()</code></td><td></td></tr><tr><td>DENSE_RANK</td><td>Returns the rank of the current row, without gaps.</td><td><code>DENSE_RANK()</code></td><td></td></tr></tbody></table>
+
+Note that no window frame clause can be specified for `ROW_NUMBER`, `RANK`, and `DENSE_RANK` window functions since they're applied on the entire partition by definition. Similarly, no window frame clause can be specified for `LAG` and `LEAD` since the row `offset` is an input to those functions themselves.
 
 ## Window aggregate query examples
 
@@ -117,7 +151,7 @@ Supported window aggregate functions are listed in the following table.
 
 ### Sum transactions by customer ID
 
-Calculate the rolling sum transaction amount ordered by the payment date for each customer ID (note, the default frame here is UNBOUNDED PRECEDING and CURRENT ROW).
+Calculate the rolling sum transaction amount ordered by the payment date for each customer ID (note, the default frame here is `UNBOUNDED PRECEDING` and `CURRENT ROW`).
 
 {% code overflow="wrap" %}
 ```
@@ -141,7 +175,7 @@ SELECT customer_id, payment_date, amount, SUM(amount) OVER(PARTITION BY customer
 
 ### Find the minimum or maximum transaction by customer ID
 
-Calculate the least (use `MIN()`) or most expensive (use `MAX()`) transaction made by each customer comparing all transactions made by the customer (default frame here is UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING). The following query shows how to find the least expensive transaction.
+Calculate the least (use `MIN()`) or most expensive (use `MAX()`) transaction made by each customer comparing all transactions made by the customer (default frame here is `UNBOUNDED PRECEDING` and `UNBOUNDED FOLLOWING`). The following query shows how to find the least expensive transaction.
 
 {% code overflow="wrap" %}
 ```sql
@@ -153,7 +187,7 @@ SELECT customer_id, payment_date, amount, MIN(amount) OVER(PARTITION BY customer
 
 ### Find the average transaction amount by customer ID
 
-Calculate a customer’s average transaction amount for all transactions they’ve made (default frame here is UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING).
+Calculate a customer’s average transaction amount for all transactions they’ve made (default frame here is `UNBOUNDED PRECEDING` and `UNBOUNDED FOLLOWING`).
 
 {% code overflow="wrap" %}
 ```sql
@@ -165,7 +199,7 @@ SELECT customer_id, payment_date, amount, AVG(amount) OVER(PARTITION BY customer
 
 ### Rank year-to-date sales for a sales team
 
-Use `ROW_NUMBER()` to rank team members by their year-to-date sales (default frame here is UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING).
+Use `ROW_NUMBER()` to rank team members by their year-to-date sales (default frame here is `UNBOUNDED PRECEDING` and `UNBOUNDED FOLLOWING`).
 
 {% code overflow="wrap" %}
 ```sql
@@ -179,7 +213,7 @@ FROM Sales.vSalesPerson;
 
 ### Count the number of transactions by customer ID
 
-Count the number of transactions made by each customer (default frame here is UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING).
+Count the number of transactions made by each customer (default frame here is `UNBOUNDED PRECEDING` and `UNBOUNDED FOLLOWING`).
 
 {% code overflow="wrap" %}
 ```sql
