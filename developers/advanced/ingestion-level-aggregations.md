@@ -38,6 +38,10 @@ The following are required for ingestion aggregation to work:
 
 Here is an example of sales data, where only the daily sales aggregates per product are needed.
 
+You can also find it when running RealtimeQuickStart, there is a table called `dailySales`
+
+<figure><img src="../../.gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
+
 ### Example Input Data
 
 ```json
