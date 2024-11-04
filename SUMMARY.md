@@ -149,6 +149,7 @@
     * [Stats](users/user-guide-query/multi-stage-query/understanding-stage-stats.md)
     * [Optimizing joins](users/user-guide-query/multi-stage-query/optimizing-joins.md)
   * [User-Defined Functions (UDFs)](users/user-guide-query/scalar-functions.md)
+  * [Explain plan](<users/user-guide-query/explain-plan (1).md>)
 * [APIs](users/api/README.md)
   * [Broker Query API](users/api/querying-pinot-using-standard-sql/README.md)
     * [Query Response Format](users/api/querying-pinot-using-standard-sql/response-format.md)
