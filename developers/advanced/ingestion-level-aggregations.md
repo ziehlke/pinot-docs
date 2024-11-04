@@ -36,21 +36,21 @@ The following are required for ingestion aggregation to work:
 
 ## Example Scenario
 
-Here is an example of sales data, where only the daily sales aggregates per product are needed.&#x20;
+Here is an example of sales data, where only the daily sales aggregates per product are needed.
 
 ### Example Input Data
 
 ```json
-{"customerID":205,"product_name": "car","price":"1500.00","timestamp":1571900400000}
-{"customerID":206,"product_name": "truck","price":"2200.00","timestamp":1571900400000}
-{"customerID":207,"product_name": "car","price":"1300.00","timestamp":1571900400000}
-{"customerID":208,"product_name": "truck","price":"700.00","timestamp":1572418800000}
-{"customerID":209,"product_name": "car","price":"1100.00","timestamp":1572505200000}
-{"customerID":210,"product_name": "car","price":"2100.00","timestamp":1572505200000}
-{"customerID":211,"product_name": "truck","price":"800.00","timestamp":1572678000000}
-{"customerID":212,"product_name": "car","price":"800.00","timestamp":1572678000000}
-{"customerID":213,"product_name": "car","price":"1900.00","timestamp":1572678000000}
-{"customerID":214,"product_name": "car","price":"1000.00","timestamp":1572678000000}
+{"customerID":205,"product_name": "car","price":1500.00,"timestamp":1571900400000}
+{"customerID":206,"product_name": "truck","price":2200.00,"timestamp":1571900400000}
+{"customerID":207,"product_name": "car","price":1300.00,"timestamp":1571900400000}
+{"customerID":208,"product_name": "truck","price":700.00,"timestamp":1572418800000}
+{"customerID":209,"product_name": "car","price":1100.00,"timestamp":1572505200000}
+{"customerID":210,"product_name": "car","price":2100.00,"timestamp":1572505200000}
+{"customerID":211,"product_name": "truck","price":800.00,"timestamp":1572678000000}
+{"customerID":212,"product_name": "car","price":800.00,"timestamp":1572678000000}
+{"customerID":213,"product_name": "car","price":1900.00,"timestamp":1572678000000}
+{"customerID":214,"product_name": "car","price":1000.00,"timestamp":1572678000000}
 ```
 
 ### Schema
@@ -59,14 +59,14 @@ Note that the schema only reflects the final table structure.
 
 ```json
 {
-  "schemaName": "daily_sales_schema",
+  "schemaName": "dailySales",
   "dimensionFieldSpecs": [
     {
       "name": "product_name",
       "dataType": "STRING"
     }
   ],
-  "metricSpecs": [
+  "metricFieldSpecs": [
     {
       "name": "sales_count",
       "dataType": "LONG"
@@ -89,7 +89,7 @@ Note that the schema only reflects the final table structure.
 
 ### Table Config
 
-From the below aggregation config example, note that `price`  exists in the input data while `total_sales` exists in the Pinot Schema.
+From the below aggregation config example, note that `price` exists in the input data while `total_sales` exists in the Pinot Schema.
 
 ```json
 {
@@ -98,7 +98,7 @@ From the below aggregation config example, note that `price`  exists in the inpu
     "transformConfigs": [
       {
         "columnName": "daysSinceEpoch",
-        "transformFunction": "toEpochDays(timestamp)"
+        "transformFunction": "toEpochDays(\"timestamp\")"
       }
     ],
     "aggregationConfigs": [
@@ -123,28 +123,28 @@ From the below aggregation config example, note that `price`  exists in the inpu
 
 ### Example Final Table
 
+<figure><img src="../../.gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
+
 | product\_name | sales\_count | total\_sales | daysSinceEpoch |
 | ------------- | ------------ | ------------ | -------------- |
 | car           | 2            | 2800.00      | 18193          |
 | truck         | 1            | 2200.00      | 18193          |
 | truck         | 1            | 700.00       | 18199          |
-| car           | 2            | 3300.00      | 18200          |
+| car           | 2            | 3200.00      | 18200          |
 | truck         | 1            | 800.00       | 18202          |
 | car           | 3            | 3700.00      | 18202          |
 
-
-
 ## Allowed Aggregation Functions
 
-| function name    | notes                                                                                                                                                                                                                                                                                    |
-| ---------------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| MAX              |                                                                                                                                                                                                                                                                                          |
-| MIN              |                                                                                                                                                                                                                                                                                          |
-| SUM              |                                                                                                                                                                                                                                                                                          |
-| COUNT            | Specify as `COUNT(*)`                                                                                                                                                                                                                                                                    |
-| DISTINCTCOUNTHLL | Specify as `DISTINCTCOUNTHLL(field, log2m)`, default is 12.  See [function reference](../../configuration-reference/functions/distinctcounthll.md) for how to define `log2m`. Cannot be changed later, a new field must be used. The schema for the output field should be `BYTES` type. | 
-| DISTINCTCOUNTHLLPLUS | Specify as `DISTINCTCOUNTHLLPLUS(field, s, p)`. See [function reference](../../configuration-reference/functions/distinctcounthllplus.md) for how to define `s` and `p`, they cannot be changed later. The schema for the output field should be `BYTES` type.                           |                                                                  
-| SUMPRECISION | Specify as `SUMPRECISION(field, precision)`, precision must be defined. Used to compute the maximum possible size of the field. Cannot be changed later, a new field must be used. The schema for the output field should be `BIG_DECIMAL` type.                                         
+| function name        | notes                                                                                                                                                                                                                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MAX                  |                                                                                                                                                                                                                                                                                         |
+| MIN                  |                                                                                                                                                                                                                                                                                         |
+| SUM                  |                                                                                                                                                                                                                                                                                         |
+| COUNT                | Specify as `COUNT(*)`                                                                                                                                                                                                                                                                   |
+| DISTINCTCOUNTHLL     | Specify as `DISTINCTCOUNTHLL(field, log2m)`, default is 12. See [function reference](../../configuration-reference/functions/distinctcounthll.md) for how to define `log2m`. Cannot be changed later, a new field must be used. The schema for the output field should be `BYTES` type. |
+| DISTINCTCOUNTHLLPLUS | Specify as `DISTINCTCOUNTHLLPLUS(field, s, p)`. See [function reference](../../configuration-reference/functions/distinctcounthllplus.md) for how to define `s` and `p`, they cannot be changed later. The schema for the output field should be `BYTES` type.                          |
+| SUMPRECISION         | Specify as `SUMPRECISION(field, precision)`, precision must be defined. Used to compute the maximum possible size of the field. Cannot be changed later, a new field must be used. The schema for the output field should be `BIG_DECIMAL` type.                                        |
 
 ## Frequently Asked Questions
 
