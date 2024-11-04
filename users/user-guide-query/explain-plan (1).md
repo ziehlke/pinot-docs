@@ -1,6 +1,6 @@
 # Explain plan
 
-Query execution within Pinot is modeled as a sequence of operators that are executed in a pipelined manner to produce the final result. The `EXPLAIN PLAN FOR` sentence[^1] can be used to obtain the execution plan of a query, which can be useful to further optimize them.
+Query execution within Pinot is modeled as a sequence of operators that are executed in a pipelined manner to produce the final result. The `EXPLAIN PLAN FOR` syntax can be used to obtain the execution plan of a query, which can be useful to further optimize them.
 
 {% hint style="warning" %}
 The explain plan is a feature that is still under development and may change in future releases. Pinot explain plans are human-readable and are intended to be used for debugging and optimization purposes. This is specially important when using the explain plan in automated scripts or tools. The explain plan, even the ones returned as tables or JSON, are not guaranteed to be stable across releases.
@@ -51,13 +51,13 @@ Segments are the basic unit of data storage and processing in Pinot. When a quer
 * Realtime segments that are being ingested, where some indexes (like range indexes) cannot be used.
 * Data distribution, specially min and max values for columns, which can affect the query plan.
 
-Given a Pinot query can touch thousands of segments, Pinot tries to minimize the number of [different queries](#user-content-fn-2)[^2] shown when explaining a query. By default, Pinot tries to analyze the plan for each segment and returns a simplified plan. How this simplification is done depends on the query engine, you can read more about that below.
+Given a Pinot query can touch thousands of segments, Pinot tries to minimize the number of [different queries](#user-content-fn-1)[^1] shown when explaining a query. By default, Pinot tries to analyze the plan for each segment and returns a simplified plan. How this simplification is done depends on the query engine, you can read more about that below.
 
 There is a verbose mode that can be used to show the plan for each segment. This mode is activated by setting the `explainPlanVerbose` query option to true, prefixing `SET explainPlanVerbose=true;` to the explain plan sentence.
 
 ## Explain on multi-stage query engine
 
-Following the more complex nature of the multi-stage query engine, its explain plan can be customized to get a plan specialized[^3] on different aspects of the query execution.
+Following the more complex nature of the multi-stage query engine, its explain plan can be customized to get a plan specialized[^2] on different aspects of the query execution.
 
 There are 3 different types of explain plans for the multi-stage query engine:
 
@@ -83,7 +83,7 @@ Independently of how it is activated, once this mode is enabled, `EXPLAIN PLAN F
 
 #### Verbose and brief mode
 
-As explained in `Different plans for different segments`, by default Pinot tries to minimize the number of [different query](#user-content-fn-4)[^4] shown when explaining a query. In multi-stage, the brief mode includes all different plans, but each equivalent plan is aggregated. For example, if the same plan is executed on 100 segments, the brief mode will show it only once and stats like the number of docs will be summed.
+As explained in `Different plans for different segments`, by default Pinot tries to minimize the number of [different query](#user-content-fn-3)[^3] shown when explaining a query. In multi-stage, the brief mode includes all different plans, but each equivalent plan is aggregated. For example, if the same plan is executed on 100 segments, the brief mode will show it only once and stats like the number of docs will be summed.
 
 In the verbose mode, one plan is shown per segment, including the segment name and all the segment specific information. This may be useful to know which segments are not using indexes, or which segments are using a different data distribution.
 
@@ -190,7 +190,7 @@ LogicalSort(offset=[0], fetch=[100])
 There have been some discussion about how to name this explain mode and it may change in future versions. The term _worker_ is leaking an implementation detail that is not explained anywhere else in the user documentation.
 {% endhint %}
 
-The workers plan is a detailed representation of the query execution plan that includes information on how the query is distributed among different servers and workers inside them. This plan does not include the segment specific information, like data distribution, indexes, etc. and it is probably the less[^5] useful of the plans for normal use cases.
+The workers plan is a detailed representation of the query execution plan that includes information on how the query is distributed among different servers and workers inside them. This plan does not include the segment specific information, like data distribution, indexes, etc. and it is probably the less[^4] useful of the plans for normal use cases.
 
 Their main use case is to try to reduce data shuffling between workers by verifying that, for example, a join is executed in colocated fashion.
 
@@ -244,7 +244,11 @@ Returns:
 
 ## Explain on single stage query engine
 
-Explain plan for single stage query engine is simpler and less customized, but returns the information in a tabular format. For example, the query `EXPLAIN PLAN FOR SELECT playerID, playerName FROM baseballStats`
+{% hint style="info" %}
+Explain plan for single stage query engine is described in deep in [explain-plan.md](explain-plan.md "mention")
+{% endhint %}
+
+Explain plan for single stage query engine is simpler and less customized, but returns the information in a tabular format. For example, the query `EXPLAIN PLAN FOR SELECT playerID, playerName FROM baseballStats`.&#x20;
 
 \
 Returns the following table:
@@ -280,12 +284,10 @@ BROKER_REDUCE(limit:10)
 \
 
 
-[^1]: statement ?
+[^1]: 'different query plans' ?
 
-[^2]: 'different query plans' ?
+[^2]: focused?
 
-[^3]: focused?
+[^3]: different plans?
 
-[^4]: different plans?
-
-[^5]: least?
+[^4]: least?
