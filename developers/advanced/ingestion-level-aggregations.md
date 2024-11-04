@@ -171,3 +171,33 @@ Ingestion Aggregation only works for real-time ingestion. For offline data, the 
 ### Why do all metrics need to be aggregated?
 
 If a metric isn't aggregated then it will result in more than one row per unique set of dimensions.
+
+### Why no data show up when I enabled AggregationConfigs?
+
+1. Check if ingestion is normal without AggregationConfigs, this is to isolate the problem
+2. Check Pinot Server log for any warning or error log, especially related to class `MutableSegmentImpl`and method `aggregateMetrics`.
+3. For JSON data, please ensure you don't double quote numbers, as they are parsed as string internally and won't be able to do the value based aggregation, e.g. sum. Using the above example, data ingestion not working with row: `{"customerID":205,"product_name": "car","price":"1500.00","timestamp":1571900400000}` , the major issue here is that price number is double quoted so it won't show up. Below is a sample stacktrace:&#x20;
+
+```
+2024/11/04 00:24:27.760 ERROR [RealtimeSegmentDataManager_dailySales__0__0__20241104T0824Z] [dailySales__0__0__20241104T0824Z] Caught exception while indexing the record at offset: 9 , row: {
+  "fieldToValueMap" : {
+    "price" : "1000.00",
+    "daysSinceEpoch" : 18202,
+    "sales_count" : 0,
+    "total_sales" : 0.0,
+    "product_name" : "car",
+    "timestamp" : 1572678000000
+  },
+  "nullValueFields" : [ "sales_count", "total_sales" ]
+}
+java.lang.ClassCastException: class java.lang.String cannot be cast to class java.lang.Number (java.lang.String and java.lang.Number are in module java.base of loader 'bootstrap')
+	at org.apache.pinot.segment.local.aggregator.SumValueAggregator.applyRawValue(SumValueAggregator.java:25) ~[classes/:?]
+	at org.apache.pinot.segment.local.indexsegment.mutable.MutableSegmentImpl.aggregateMetrics(MutableSegmentImpl.java:855) ~[classes/:?]
+	at org.apache.pinot.segment.local.indexsegment.mutable.MutableSegmentImpl.index(MutableSegmentImpl.java:577) ~[classes/:?]
+	at org.apache.pinot.core.data.manager.realtime.RealtimeSegmentDataManager.processStreamEvents(RealtimeSegmentDataManager.java:641) ~[classes/:?]
+	at org.apache.pinot.core.data.manager.realtime.RealtimeSegmentDataManager.consumeLoop(RealtimeSegmentDataManager.java:477) ~[classes/:?]
+	at org.apache.pinot.core.data.manager.realtime.RealtimeSegmentDataManager$PartitionConsumer.run(RealtimeSegmentDataManager.java:734) ~[classes/:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+
+```
+
