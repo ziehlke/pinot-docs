@@ -66,7 +66,7 @@
     * [Google Cloud Storage](basics/data-import/pinot-file-system/import-from-gcp.md)
   * [Input formats](basics/data-import/pinot-input-formats.md)
     * [Complex Type (Array, Map) Handling](basics/data-import/complex-type.md)
-    * [Unnest JSON Array](basics/data-import/complex-type-examples.md)
+    * [Complex Type Examples](basics/data-import/complex-type-examples.md)
     * [Ingest records with dynamic schemas](basics/data-import/schema-conforming-transformer.md)
   * [Reload a table segment](basics/data-import/segment-reload.md)
   * [Upload a table segment](basics/data-import/segment-upload.md)
