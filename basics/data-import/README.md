@@ -86,8 +86,8 @@ This guide shows you how to handle the complex type in the ingested data, such a
 
 This guide shows additional examples on how to work with complex types.
 
-{% content-ref url="unnest-json-array.md" %}
-[unnest-json-array.md](complex-type-examples.md)
+{% content-ref url="complex-type-examples.md" %}
+[complex-type-examples.md](complex-type-examples.md)
 {% endcontent-ref %}
 
 This guide shows you how to handle records with dynamic schemas, like JSON log events.

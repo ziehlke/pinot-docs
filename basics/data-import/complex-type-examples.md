@@ -2,6 +2,8 @@
 description: Additional examples that demonstrate handling of complex types.
 ---
 
+Additional examples that demonstrate handling of complex types.
+
 # Unnest Root Level Collection
 In this example, we would look at un-nesting json records that are batched together as part of a single key at the root 
 level. We will make use of the [ComplexType](complex-type.md) configs to persist the individual student records as 
