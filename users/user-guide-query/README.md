@@ -75,7 +75,3 @@ description: >-
 {% content-ref url="query-syntax/windows-functions.md" %}
 [windows-functions.md](query-syntax/windows-functions.md)
 {% endcontent-ref %}
-
-{% content-ref url="query-syntax/windows-functions.md" %}
-[windows-functions.md](query-syntax/windows-functions.md)
-{% endcontent-ref %}
