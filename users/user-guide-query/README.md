@@ -56,10 +56,6 @@ description: >-
 [joins.md](query-syntax/joins.md)
 {% endcontent-ref %}
 
-{% content-ref url="query-syntax/joins.md" %}
-[joins.md](query-syntax/joins.md)
-{% endcontent-ref %}
-
 {% content-ref url="query-syntax/lookup-udf-join.md" %}
 [lookup-udf-join.md](query-syntax/lookup-udf-join.md)
 {% endcontent-ref %}
